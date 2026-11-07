@@ -27,6 +27,17 @@
 
   const hz = (m) => 440 * Math.pow(2, (m - 69) / 12);
 
+  // "Happy Birthday to You" in F, split across the 5 balloons. [midi, beats]
+  const SONG = [
+    [[72, 0.75], [72, 0.25], [74, 1], [72, 1], [77, 1], [76, 2]],
+    [[72, 0.75], [72, 0.25], [74, 1], [72, 1], [79, 1], [77, 2]],
+    [[72, 0.75], [72, 0.25], [84, 1], [81, 1]],
+    [[77, 1], [76, 1], [74, 2]],
+    [[82, 0.75], [82, 0.25], [81, 1], [77, 1], [79, 1], [77, 2.5]],
+  ];
+  const BEAT = 0.3;
+  let phraseBus = null;
+
   function makeImpulse(seconds, decay) {
     const len = Math.floor(ctx.sampleRate * seconds);
     const buf = ctx.createBuffer(2, len, ctx.sampleRate);
@@ -125,6 +136,39 @@
     o2.stop(at + 1.7);
   }
 
+  function duckMusic(seconds) {
+    if (!musicBus) return;
+    const t = ctx.currentTime;
+    musicBus.gain.cancelScheduledValues(t);
+    musicBus.gain.setTargetAtTime(MUSIC_LEVEL * 0.3, t, 0.08);
+    musicBus.gain.setTargetAtTime(MUSIC_LEVEL, t + seconds, 0.6);
+  }
+
+  function playPhrase(index) {
+    const notes = SONG[Math.min(index, SONG.length - 1)];
+    const t0 = ctx.currentTime + 0.06;
+
+    if (phraseBus) {
+      phraseBus.gain.setTargetAtTime(0, t0, 0.03);
+    }
+    phraseBus = ctx.createGain();
+    phraseBus.gain.value = 1;
+    phraseBus.connect(sfxBus);
+
+    let t = t0;
+    let total = 0;
+    notes.forEach(([m, beats]) => {
+      bell(m, t, 0.2, phraseBus);
+      bell(m - 12, t, 0.07, phraseBus);
+      t += beats * BEAT;
+      total += beats * BEAT;
+    });
+    if (index === SONG.length - 1) {
+      [65, 69, 72, 77].forEach((m) => bell(m, t - 2.5 * BEAT, 0.06, phraseBus));
+    }
+    duckMusic(total + 0.4);
+  }
+
   function startMusic() {
     let i = 0;
     playChord(i);
@@ -206,8 +250,7 @@
       o.start(t);
       o.stop(t + 0.16);
 
-      const scale = [72, 74, 76, 79, 84];
-      bell(scale[Math.min(step || 0, scale.length - 1)], t + 0.04, 0.16);
+      playPhrase(step || 0);
     },
 
     sparkle() {
@@ -259,17 +302,59 @@
     nope() {
       if (!ready()) return;
       const t = ctx.currentTime;
-      [0, 0.13].forEach((d, i) => {
+      // lid knock-knock
+      [0, 0.09].forEach((d) => {
+        const src = ctx.createBufferSource();
+        src.buffer = noiseBuffer(0.08);
+        const bp = ctx.createBiquadFilter();
+        bp.type = "bandpass";
+        bp.frequency.value = 700;
+        bp.Q.value = 3;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.7, t + d);
+        g.gain.exponentialRampToValueAtTime(0.001, t + d + 0.07);
+        src.connect(bp).connect(g).connect(sfxBus);
+        src.start(t + d);
+      });
+      // sad little "aww"
+      [[76, 0.2], [75, 0.42], [74, 0.64]].forEach(([m, d], i) => {
         const o = ctx.createOscillator();
         const g = ctx.createGain();
         o.type = "triangle";
-        o.frequency.value = i ? hz(55) : hz(58);
-        g.gain.setValueAtTime(0.16, t + d);
-        g.gain.exponentialRampToValueAtTime(0.001, t + d + 0.22);
+        o.frequency.setValueAtTime(hz(m), t + d);
+        if (i === 2) o.frequency.linearRampToValueAtTime(hz(m - 1), t + d + 0.5);
+        const len = i === 2 ? 0.6 : 0.2;
+        g.gain.setValueAtTime(0, t + d);
+        g.gain.linearRampToValueAtTime(0.22, t + d + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.001, t + d + len);
         o.connect(g).connect(sfxBus);
         o.start(t + d);
-        o.stop(t + d + 0.25);
+        o.stop(t + d + len + 0.05);
       });
+    },
+
+    found() {
+      if (!ready()) return;
+      const t = ctx.currentTime;
+      [[72, 0], [76, 0.1], [79, 0.2], [84, 0.32]].forEach(([m, d]) => bell(m, t + d, 0.2));
+      [72, 76, 79, 84].forEach((m) => bell(m, t + 0.5, 0.1));
+      [88, 91].forEach((m, i) => bell(m, t + 0.62 + i * 0.08, 0.08));
+      duckMusic(1.6);
+    },
+
+    pick() {
+      if (!ready()) return;
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = "sine";
+      o.frequency.setValueAtTime(520, t);
+      o.frequency.exponentialRampToValueAtTime(780, t + 0.07);
+      g.gain.setValueAtTime(0.2, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+      o.connect(g).connect(sfxBus);
+      o.start(t);
+      o.stop(t + 0.12);
     },
 
     open() {

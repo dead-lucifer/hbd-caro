@@ -320,11 +320,10 @@
       if (meter) meter.textContent = popped + " / 5";
       shooting = false;
       if (popped >= WORDS.length) {
-        setTimeout(() => sfx("sparkle"), 250);
         setTimeout(() => {
           show("doors");
           setupDoors();
-        }, 1000);
+        }, 2200);
       }
     }
 
@@ -423,7 +422,8 @@
       box.classList.add("is-win");
       if (emoji) emoji.textContent = "🎂";
       if (feedback) feedback.textContent = "found it. sweet surprise unlocked. 🎂❤️";
-      sfx("sparkle");
+      sfx("pick");
+      sfx("found");
       burst(70);
       setTimeout(() => {
         show("quiz");
@@ -434,6 +434,7 @@
 
     box.classList.add("is-wrong");
     box.disabled = true;
+    sfx("pick");
     sfx("nope");
     if (emoji) emoji.textContent = "🥲";
     const fails = [
