@@ -326,6 +326,7 @@
         setTimeout(() => {
           show("doors");
           setupDoors();
+          sfx("playSong");
         }, Math.max(1200, songLeft * 1000 + 500));
       }
     }

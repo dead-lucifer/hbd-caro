@@ -141,7 +141,10 @@
   const YT_ID = "iBkBCKkqpeM";
   const YT_VOLUME = 70;
   const YT_DUCKED = 22;
+  // "Hosh mein..." comes in at ~0:16.8
+  const ZULFE_START = 13;
   let yt = null;
+  let ytPrimed = false;
   let ytReady = false;
   let ytWanted = false;
   let ytPlaying = false;
@@ -160,14 +163,21 @@
           onReady: () => {
             ytReady = true;
             yt.setVolume(YT_VOLUME);
-            if (muted) yt.mute();
-            if (ytWanted) yt.playVideo();
+            if (ytWanted) beginSong();
+            else if (started) primeYouTube();
           },
           onStateChange: (e) => {
-            ytPlaying = e.data === YT.PlayerState.PLAYING;
+            const playing = e.data === YT.PlayerState.PLAYING;
+            if (playing && !ytWanted) {
+              yt.pauseVideo();
+              yt.seekTo(ZULFE_START, true);
+              ytPrimed = true;
+              return;
+            }
+            ytPlaying = playing;
             if (ytPlaying) stopPad();
             if (e.data === YT.PlayerState.ENDED) {
-              yt.seekTo(0, true);
+              yt.seekTo(ZULFE_START, true);
               yt.playVideo();
             }
             updateLabel();
@@ -183,9 +193,33 @@
     document.head.appendChild(s);
   }
 
-  function playYouTube() {
+  // Started muted inside the first tap so mobile browsers allow it to play later.
+  function primeYouTube() {
+    if (!yt || !ytReady || ytPrimed || ytWanted) return;
+    yt.mute();
+    yt.playVideo();
+  }
+
+  function beginSong() {
+    if (!yt || !ytReady) return;
+    yt.seekTo(ZULFE_START, true);
+    yt.setVolume(0);
+    if (muted) yt.mute();
+    else yt.unMute();
+    yt.playVideo();
+    let v = 0;
+    const fade = setInterval(() => {
+      v = Math.min(YT_VOLUME, v + 7);
+      yt.setVolume(v);
+      if (v >= YT_VOLUME) clearInterval(fade);
+    }, 120);
+  }
+
+  function playSong() {
+    if (ytWanted) return;
     ytWanted = true;
-    if (ytReady && yt) yt.playVideo();
+    beginSong();
+    updateLabel();
     setTimeout(updateLabel, 2500);
     setTimeout(() => {
       if (!ytPlaying) fallbackToPad();
@@ -195,7 +229,12 @@
   function updateLabel() {
     const label = document.getElementById("np-label");
     const np = document.getElementById("np");
-    if (!label || !ytWanted) return;
+    if (!label) return;
+    if (!ytWanted) {
+      label.textContent = "up next · Zulfe";
+      if (np) np.classList.add("is-paused");
+      return;
+    }
     label.textContent = ytPlaying ? "Zulfe · Saahel" : "tap for music ▶";
     if (np) np.classList.toggle("is-paused", !ytPlaying || muted);
   }
@@ -288,8 +327,9 @@
     if (ctx.state === "suspended") ctx.resume();
     if (started) return;
     started = true;
-    playYouTube();
+    primeYouTube();
     updateToggle();
+    updateLabel();
   }
 
   function ready() {
@@ -531,11 +571,12 @@
     }
     if (t.closest("#np") && yt && ytReady && !ytPlaying) {
       if (muted) toggle();
-      yt.playVideo();
+      if (!ytWanted) playSong();
+      else yt.playVideo();
     }
   });
 
   loadYouTube();
 
-  window.Sound = Object.assign({ start, toggle, songRemaining }, sfx);
+  window.Sound = Object.assign({ start, toggle, songRemaining, playSong }, sfx);
 })();
