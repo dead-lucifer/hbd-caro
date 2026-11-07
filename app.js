@@ -21,6 +21,7 @@
       title: "sunsets & you",
       line: "Beautiful view, golden sky, and you making it a little more special.",
       badge: "+ reward: one sunset date, hopefully together. ❤️",
+      note: "Honestly, the first thing I noticed about you was how calm you are. Everything around can be total chaos and you're just there, chill, like nothing can shake you. I don't know how you do it, but I really like that about you.",
     },
     {
       img: "assets/bench.jpg",
@@ -28,6 +29,7 @@
       title: "little moments, favourite company",
       line: "Some random evenings turn into memories you wish lasted a little longer.",
       badge: "+ reward: one late-night walk with me. ❤️",
+      note: "You're the kind of person who actually shows up for people. You listen properly, you hype them up, and somehow they leave feeling like they can do anything. Not everyone is like that. You don't even notice you're doing it.",
     },
     {
       img: "assets/night.jpg",
@@ -35,6 +37,7 @@
       title: "just because",
       line: "Not every surprise needs a big reason. Sometimes, making you smile is reason enough.",
       badge: "+ reward: one extra reason to smile today. ❤️",
+      note: "And your vibe. I can't explain it properly, but talking to you just feels easy. No overthinking, no filter needed, and somehow an hour feels like ten minutes. That's rare, and I like it a lot.",
     },
     {
       img: "assets/mall.jpg",
@@ -42,6 +45,7 @@
       title: "keep this one",
       line: "A silly little frame, a big little feeling. Proof that the best days don't always announce themselves.",
       badge: "+ reward: more days like this, with me around. ❤️",
+      note: "And okay, I have to say it at least once. You're beautiful. Not just in photos (although these photos are solid proof). Even when you're laughing at your own jokes. Especially then.",
     },
   ];
 
@@ -546,6 +550,9 @@
       if ($("reward-title")) $("reward-title").textContent = drop.title;
       if ($("reward-line")) $("reward-line").textContent = drop.line;
       if ($("reward-badge")) $("reward-badge").textContent = drop.badge;
+      if ($("reward-note-label"))
+        $("reward-note-label").textContent = "what I like about you · 0" + (dropIndex + 1);
+      if ($("reward-note")) $("reward-note").textContent = drop.note || "";
       if ($("reward-chip")) $("reward-chip").textContent = drop.chip;
       if ($("reward")) $("reward").hidden = false;
     }, 420);
