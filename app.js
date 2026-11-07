@@ -320,10 +320,13 @@
       if (meter) meter.textContent = popped + " / 5";
       shooting = false;
       if (popped >= WORDS.length) {
+        if (meter) meter.textContent = "now close your eyes & make a wish 🕯️✨";
+        const songLeft =
+          window.Sound && window.Sound.songRemaining ? window.Sound.songRemaining() : 0;
         setTimeout(() => {
           show("doors");
           setupDoors();
-        }, 2200);
+        }, Math.max(1200, songLeft * 1000 + 500));
       }
     }
 

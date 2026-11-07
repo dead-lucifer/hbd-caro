@@ -37,6 +37,7 @@
   ];
   const BEAT = 0.3;
   let phraseBus = null;
+  let songEnd = 0;
 
   function makeImpulse(seconds, decay) {
     const len = Math.floor(ctx.sampleRate * seconds);
@@ -146,27 +147,31 @@
 
   function playPhrase(index) {
     const notes = SONG[Math.min(index, SONG.length - 1)];
-    const t0 = ctx.currentTime + 0.06;
+    if (index === 0) songEnd = 0;
+    const t0 = Math.max(ctx.currentTime + 0.06, songEnd);
 
-    if (phraseBus) {
-      phraseBus.gain.setTargetAtTime(0, t0, 0.03);
+    if (!phraseBus) {
+      phraseBus = ctx.createGain();
+      phraseBus.gain.value = 1;
+      phraseBus.connect(sfxBus);
     }
-    phraseBus = ctx.createGain();
-    phraseBus.gain.value = 1;
-    phraseBus.connect(sfxBus);
 
     let t = t0;
-    let total = 0;
     notes.forEach(([m, beats]) => {
       bell(m, t, 0.2, phraseBus);
       bell(m - 12, t, 0.07, phraseBus);
       t += beats * BEAT;
-      total += beats * BEAT;
     });
     if (index === SONG.length - 1) {
       [65, 69, 72, 77].forEach((m) => bell(m, t - 2.5 * BEAT, 0.06, phraseBus));
     }
-    duckMusic(total + 0.4);
+    songEnd = t;
+    duckMusic(songEnd - ctx.currentTime + 0.4);
+  }
+
+  function songRemaining() {
+    if (!ctx) return 0;
+    return Math.max(0, songEnd - ctx.currentTime);
   }
 
   function startMusic() {
@@ -430,5 +435,5 @@
     }
   });
 
-  window.Sound = Object.assign({ start, toggle }, sfx);
+  window.Sound = Object.assign({ start, toggle, songRemaining }, sfx);
 })();
