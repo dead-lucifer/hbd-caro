@@ -166,7 +166,14 @@
     fx.style.zIndex = "80";
   }
 
+  const sfx = (name, arg) => {
+    try {
+      if (window.Sound && window.Sound[name]) window.Sound[name](arg);
+    } catch (e) {}
+  };
+
   function show(name) {
+    if (name !== "open" && name !== "reveal") sfx("swish");
     Object.keys(screens).forEach((key) => {
       const el = screens[key];
       if (el) el.classList.remove("is-on");
@@ -304,6 +311,7 @@
     function finishPop(btn) {
       if (!btn || btn.classList.contains("is-pop")) return;
       btn.classList.add("is-pop");
+      sfx("pop", popped);
       popped += 1;
       revealNextWord();
       const rect = btn.getBoundingClientRect();
@@ -312,6 +320,7 @@
       if (meter) meter.textContent = popped + " / 5";
       shooting = false;
       if (popped >= WORDS.length) {
+        setTimeout(() => sfx("sparkle"), 250);
         setTimeout(() => {
           show("doors");
           setupDoors();
@@ -341,6 +350,7 @@
       setTimeout(() => {
         bow.classList.remove("is-draw");
         bow.classList.add("is-empty");
+        sfx("whoosh");
 
         const arrow = document.createElement("div");
         arrow.className = "shot";
@@ -413,6 +423,7 @@
       box.classList.add("is-win");
       if (emoji) emoji.textContent = "🎂";
       if (feedback) feedback.textContent = "found it. sweet surprise unlocked. 🎂❤️";
+      sfx("sparkle");
       burst(70);
       setTimeout(() => {
         show("quiz");
@@ -423,6 +434,7 @@
 
     box.classList.add("is-wrong");
     box.disabled = true;
+    sfx("nope");
     if (emoji) emoji.textContent = "🥲";
     const fails = [
       "empty. this one was just testing you.",
@@ -465,6 +477,7 @@
         if (locked) return;
         locked = true;
         btn.classList.add("is-on");
+        sfx("chime");
         if (feedback) feedback.textContent = item.replies[i];
         setTimeout(() => {
           quizIndex += 1;
@@ -518,6 +531,7 @@
     openingDrop = true;
     box.classList.add("is-open");
     box.disabled = true;
+    sfx("open");
 
     const rect = box.getBoundingClientRect();
     const app = $("app").getBoundingClientRect();
@@ -536,6 +550,7 @@
 
   function nextDrop() {
     if ($("reward")) $("reward").hidden = true;
+    sfx("tap");
     dropIndex += 1;
     if (dropIndex >= DROPS.length) {
       runLoading();
@@ -559,6 +574,7 @@
         clearInterval(tick);
         setTimeout(() => {
           show("reveal");
+          sfx("finale");
           burst(140);
           const clip = $("clip");
           if (clip) {
@@ -571,6 +587,9 @@
   }
 
   function startGame() {
+    if (screens.balloons && screens.balloons.classList.contains("is-on")) return;
+    sfx("start");
+    sfx("chime");
     show("balloons");
     startBalloons();
   }
@@ -594,6 +613,7 @@
       locked = false;
       openingDrop = false;
       dropIndex = 0;
+      sfx("tap");
       show("open");
       return;
     }
