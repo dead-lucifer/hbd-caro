@@ -145,6 +145,20 @@
   let locked = false;
   let openingDrop = false;
 
+  const preloaded = DROPS.map((d) => {
+    const img = new Image();
+    img.decoding = "async";
+    img.src = d.img;
+    return img;
+  });
+  window.addEventListener("load", () => {
+    const clip = $("clip");
+    if (clip) {
+      clip.preload = "auto";
+      clip.load();
+    }
+  });
+
   // Never let the fx canvas steal taps
   const fx = $("fx");
   if (fx) {
