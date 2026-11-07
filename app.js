@@ -422,7 +422,6 @@
       box.classList.add("is-win");
       if (emoji) emoji.textContent = "🎂";
       if (feedback) feedback.textContent = "found it. sweet surprise unlocked. 🎂❤️";
-      sfx("pick");
       sfx("found");
       burst(70);
       setTimeout(() => {
@@ -434,7 +433,6 @@
 
     box.classList.add("is-wrong");
     box.disabled = true;
-    sfx("pick");
     sfx("nope");
     if (emoji) emoji.textContent = "🥲";
     const fails = [
@@ -478,7 +476,7 @@
         if (locked) return;
         locked = true;
         btn.classList.add("is-on");
-        sfx("chime");
+        sfx("answer", i);
         if (feedback) feedback.textContent = item.replies[i];
         setTimeout(() => {
           quizIndex += 1;
@@ -599,6 +597,9 @@
   document.addEventListener("click", (e) => {
     const t = e.target;
     if (!(t instanceof Element)) return;
+
+    const tapped = t.closest("button");
+    if (tapped && !tapped.disabled && tapped.id !== "sound-toggle") sfx("pick");
 
     if (t.closest("#btn-start")) {
       startGame();

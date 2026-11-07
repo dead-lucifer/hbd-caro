@@ -342,6 +342,21 @@
       duckMusic(1.6);
     },
 
+    answer(i) {
+      if (!ready()) return;
+      const t = ctx.currentTime + 0.04;
+      const motifs = [
+        [[72, 0], [76, 0.11], [79, 0.22], [84, 0.36]],
+        [[77, 0], [81, 0.1], [77, 0.2], [84, 0.3], [89, 0.44]],
+        [[69, 0], [72, 0.14], [76, 0.28], [74, 0.42], [81, 0.58]],
+      ];
+      motifs[(i || 0) % motifs.length].forEach(([m, d]) => {
+        bell(m, t + d, 0.22);
+        bell(m - 12, t + d, 0.06);
+      });
+      duckMusic(1.4);
+    },
+
     pick() {
       if (!ready()) return;
       const t = ctx.currentTime;
