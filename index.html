@@ -12,12 +12,17 @@
       href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Figtree:wght@400;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=27" />
+    <link rel="stylesheet" href="styles.css?v=28" />
   </head>
   <body>
     <main class="app" id="app">
       <canvas id="fx" class="fx" aria-hidden="true"></canvas>
-      <button class="sound-toggle" id="sound-toggle" type="button" aria-label="mute sound" hidden>🔊</button>
+      <div class="yt-audio" aria-hidden="true"><div id="yt-player"></div></div>
+      <div class="np" id="np" hidden>
+        <span class="np__eq" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="np__title" id="np-label">Zulfe · Saahel</span>
+        <button class="sound-toggle" id="sound-toggle" type="button" aria-label="mute sound">🔊</button>
+      </div>
 
       <!-- OPEN -->
       <section class="screen screen--open is-on" id="screen-open">
@@ -177,7 +182,7 @@
         </div>
       </section>
     </main>
-    <script src="sound.js?v=27"></script>
-    <script src="app.js?v=27"></script>
+    <script src="sound.js?v=28"></script>
+    <script src="app.js?v=28"></script>
   </body>
 </html>

@@ -137,8 +137,95 @@
     o2.stop(at + 1.7);
   }
 
+  // ---- "Zulfe" via the official YouTube embed ----
+  const YT_ID = "iBkBCKkqpeM";
+  const YT_VOLUME = 70;
+  const YT_DUCKED = 22;
+  let yt = null;
+  let ytReady = false;
+  let ytWanted = false;
+  let ytPlaying = false;
+  let ytDuckTimer = null;
+
+  function loadYouTube() {
+    const prev = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => {
+      if (prev) prev();
+      yt = new YT.Player("yt-player", {
+        videoId: YT_ID,
+        width: 200,
+        height: 200,
+        playerVars: { playsinline: 1, controls: 0, rel: 0, modestbranding: 1, disablekb: 1 },
+        events: {
+          onReady: () => {
+            ytReady = true;
+            yt.setVolume(YT_VOLUME);
+            if (muted) yt.mute();
+            if (ytWanted) yt.playVideo();
+          },
+          onStateChange: (e) => {
+            ytPlaying = e.data === YT.PlayerState.PLAYING;
+            if (ytPlaying) stopPad();
+            if (e.data === YT.PlayerState.ENDED) {
+              yt.seekTo(0, true);
+              yt.playVideo();
+            }
+            updateLabel();
+          },
+          onError: () => fallbackToPad(),
+        },
+      });
+    };
+    const s = document.createElement("script");
+    s.src = "https://www.youtube.com/iframe_api";
+    s.async = true;
+    s.onerror = () => fallbackToPad();
+    document.head.appendChild(s);
+  }
+
+  function playYouTube() {
+    ytWanted = true;
+    if (ytReady && yt) yt.playVideo();
+    setTimeout(updateLabel, 2500);
+    setTimeout(() => {
+      if (!ytPlaying) fallbackToPad();
+    }, 6000);
+  }
+
+  function updateLabel() {
+    const label = document.getElementById("np-label");
+    const np = document.getElementById("np");
+    if (!label || !ytWanted) return;
+    label.textContent = ytPlaying ? "Zulfe · Saahel" : "tap for music ▶";
+    if (np) np.classList.toggle("is-paused", !ytPlaying || muted);
+  }
+
+  let padOn = false;
+  function fallbackToPad() {
+    if (padOn || !ctx || ytPlaying) return;
+    padOn = true;
+    startMusic();
+  }
+
+  function stopPad() {
+    if (!padOn) return;
+    padOn = false;
+    clearInterval(chordTimer);
+    clearTimeout(sparkleTimer);
+    musicBus.gain.cancelScheduledValues(ctx.currentTime);
+    musicBus.gain.setTargetAtTime(0, ctx.currentTime, 0.4);
+  }
+
+  function duckYouTube(seconds) {
+    if (!yt || !ytReady) return;
+    yt.setVolume(YT_DUCKED);
+    clearTimeout(ytDuckTimer);
+    ytDuckTimer = setTimeout(() => yt.setVolume(YT_VOLUME), seconds * 1000);
+  }
+
   function duckMusic(seconds) {
-    if (!musicBus) return;
+    duckYouTube(seconds);
+    if (!musicBus || !padOn) return;
     const t = ctx.currentTime;
     musicBus.gain.cancelScheduledValues(t);
     musicBus.gain.setTargetAtTime(MUSIC_LEVEL * 0.3, t, 0.08);
@@ -201,7 +288,7 @@
     if (ctx.state === "suspended") ctx.resume();
     if (started) return;
     started = true;
-    startMusic();
+    playYouTube();
     updateToggle();
   }
 
@@ -406,8 +493,10 @@
 
   function updateToggle() {
     const btn = document.getElementById("sound-toggle");
+    const np = document.getElementById("np");
+    if (np) np.hidden = !started;
+    document.body.classList.toggle("has-np", started);
     if (!btn) return;
-    btn.hidden = !started;
     btn.textContent = muted ? "🔇" : "🔊";
     btn.setAttribute("aria-label", muted ? "unmute sound" : "mute sound");
   }
@@ -418,7 +507,12 @@
       master.gain.cancelScheduledValues(ctx.currentTime);
       master.gain.setTargetAtTime(muted ? 0 : 1, ctx.currentTime, 0.08);
     }
+    if (yt && ytReady) {
+      if (muted) yt.mute();
+      else yt.unMute();
+    }
     updateToggle();
+    updateLabel();
   }
 
   document.addEventListener("visibilitychange", () => {
@@ -429,11 +523,19 @@
 
   document.addEventListener("click", (e) => {
     const t = e.target;
-    if (t instanceof Element && t.closest("#sound-toggle")) {
+    if (!(t instanceof Element)) return;
+    if (t.closest("#sound-toggle")) {
       e.stopPropagation();
       toggle();
+      return;
+    }
+    if (t.closest("#np") && yt && ytReady && !ytPlaying) {
+      if (muted) toggle();
+      yt.playVideo();
     }
   });
+
+  loadYouTube();
 
   window.Sound = Object.assign({ start, toggle, songRemaining }, sfx);
 })();
